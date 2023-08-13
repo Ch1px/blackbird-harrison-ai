@@ -8,30 +8,56 @@ import Grid from '@mui/material/Grid';
 import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import logo from '../../assets/logo.svg';
-
+import emailValidator from 'email-validator';
 
 export default function LoginForm() {
   const [showAlert, setShowAlert] = useState(false);
-  const validateForm = (event) => {
-    event.preventDefault()
-    const data = new FormData(event.currentTarget);
-    const email = data.get('email');
-    const password = data.get('password');
+  const [alertMessage, setAlertMessage] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-    // Add validation code here
+  const validateForm = (email, password) => {
+    let isValid = true;
 
+    if (!emailValidator.validate(email)) {
+      setEmailError("Invalid email");
+      isValid = false;
+    } else {
+      setEmailError("");
+    }
+
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasDigit = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*]/.test(password);
+
+    if (
+      password.length < 8 ||
+      !hasUppercase ||
+      !hasLowercase ||
+      !hasDigit ||
+      !hasSpecialChar
+    ) {
+      setPasswordError("Password must have at least 8 characters, an uppercase, a lowercase, a number, and a special character (!@#$%^&*).");
+      isValid = false;
+    } else {
+      setPasswordError("");
+    }
+
+    return isValid;
   }
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
-    });
-    validateForm(event);
-    setShowAlert("Login Successful");
-  };
+    const email = data.get('email');
+    const password = data.get('password');
+
+    if (validateForm(email, password)) {
+      setAlertMessage("Login Successful");
+      setShowAlert(true);
+    }
+  }
 
   return (
     <>
@@ -39,10 +65,13 @@ export default function LoginForm() {
         <Snackbar
           open={showAlert}
           autoHideDuration={6000}
-          onClose={() => setShowAlert(false)}
-          message={showAlert}
+          onClose={() => {
+            setShowAlert(false);
+            setAlertMessage("");
+          }}
+          message={alertMessage}
         >
-          <Alert>{showAlert}</Alert>
+          <Alert>{alertMessage}</Alert>
         </Snackbar>
       }
       <Grid
@@ -87,6 +116,9 @@ export default function LoginForm() {
               name="email"
               autoComplete="email"
               autoFocus
+              error={!!emailError}
+              helperText={emailError}
+              inputProps={{ 'data-testid': 'email-input' }}
             />
             <TextField
               margin="normal"
@@ -97,6 +129,9 @@ export default function LoginForm() {
               type="password"
               id="password"
               autoComplete="current-password"
+              error={!!passwordError}
+              helperText={passwordError}
+              inputProps={{ 'data-testid': 'password-input' }}
             />
             <Button
               type="submit"
